@@ -1,0 +1,89 @@
+from roboticstoolbox import Bicycle, RandomPath, VehicleIcon, RangeBearingSensor,LandmarkMap
+from math import pi, atan2
+import matplotlib.pyplot as plt
+import numpy as np
+
+anim = VehicleIcon('rob.png', scale = 2)
+initx = float(input("Enter the X coordinate for the robot's initial position: "))
+inity = float(input("Enter the Y coordinate for the robot's initial position: "))
+initu=initialPos=[initx, inity]
+veh = Bicycle(
+    animation = anim,
+    control = RandomPath,
+    dim = 10,
+    x0=(initialPos[0],initialPos[1],0),
+)
+
+veh.init(plot=True)
+obs = int(input("Enter the number of obstacles: "))
+map = LandmarkMap(obs, 20)
+goal_x = float(input("Please input initial X coordinate for goal: "))
+goal_y = float(input("Please input initial Y coordinate for goal: "))
+goal = [goal_x, goal_y]
+goal_marker_style = {
+    'marker': 'D',
+    'markersize': 6,
+    'color': 'b',
+}
+plt.plot(goal[0], goal[1], **goal_marker_style)
+map.plot()
+
+sensor=RangeBearingSensor(robot=veh,map=map, animate=True)
+for i in sensor.h(veh.x):
+    dis_land = i[0]
+    ang_land = i[1]
+
+
+# print('distance between vehicle and obstacles: \n', dis_land)
+# print('angle between vehicle and obstacles: \n', ang_land)
+
+# plt.pause(100)
+
+# veh._animation.update(veh.x)
+# plt.pause(1000)+6
+goal_array=[goal]
+goal_array.append(goal)
+goal_array.insert(0,initialPos)
+x_array=[item[0] for item in goal_array]
+y_array=[item[1] for item in goal_array]
+# z = np.polyfit(x_array, y_array, len(goal_array)-1)
+# p = np.poly1d(z)
+# t = np.linspace(x_array[0],x_array[-1], 20)
+# plt.plot(t,p(t),'-')
+s_s = pi/4
+
+run=True
+target=[goal_array]
+while(run):
+    for i in sensor.h(veh.x):
+        if (i[0] > 0.1) and (abs(i[1]) > s_s/8):
+            goal_heading = atan2(
+                goal[1] - veh.x[1],
+                goal[0] - veh.x[0]
+                )
+            steer = goal_heading-veh.x[2]
+            n1 = abs(target[0]-veh.x[0])
+            n2 = abs(target[1]-veh.x[1])
+            if steer>pi:
+                steer = steer-2*pi
+                veh.step(0.8,steer)
+            if (n1>0.1):
+                run=True
+            if (n2 > 0.1):
+                run=True
+            else:
+                run=False
+        else:
+            veh.step(-1,0)
+            plt.pause(0.005)
+        veh._animation.update(veh.x)
+ # if steer>pi:
+        #     steer = steer-2*pi
+        # veh.step(0.8,steer)
+        # if( (abs(target[0]-veh.x[0]) >0.3) or (abs(target[1]-veh.x[1]) > 0.3) ):
+        #     run=True
+        # else:
+        #     run=False
+        # veh._animation.update(veh.x)
+        # plt.pause(0.0005)
+plt.plot(goal[0], goal[1], **goal_marker_style)
